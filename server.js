@@ -67,9 +67,11 @@ app.get('/studentreport', (req, res)=>{
 				.catch(err =>{
 					console.log(err);
 					conn.end();
+					res.status(500).send(res);
 				});
 		}).catch(err=>{
-			console.log(err);	
+			console.log(err);
+			res.status(500).send(res);	
 		});                                               
                                                 
 });
@@ -109,9 +111,11 @@ app.get('/agents/:agent_code', (req, res)=>{
                                 .catch(err =>{
                                         console.log(err);
                                         conn.end();
+					res.status(500).send(res);
                                 });
                 }).catch(err=>{
                         console.log(err);
+			res.status(500).send(res);
                 });
 
 });
@@ -150,10 +154,12 @@ app.get('/customer/orders/:agent_code', (req, res)=>{
                                 })                                                                          
                                 .catch(err =>{                                                              
                                         console.log(err);                                                   
-                                        conn.end();                                                         
+                                        conn.end();
+					res.status(500).send(res);                                                         
                                 });                                                                         
                 }).catch(err=>{                                                                             
-                        console.log(err);                                                                   
+                        console.log(err);
+			res.status(500).send(res);                                                                   
                 });   
 
 });
@@ -186,14 +192,15 @@ app.get('/customer/orders/:agent_code', (req, res)=>{
  *          200:
  *              description: Object company created
  */
-app.post('/company', [check('company_name').trim().not().isEmpty().withMessage('Exceeds length')], jsonParser, async (req, res)=>{
+app.post('/company', jsonParser, [check('id').trim().not().isEmpty().isLength({ max: 10 }).isAlphanumeric().withMessage('Add valid company id'), check('name').trim().not().isEmpty().isString().isAlpha().withMessage('Add valid Company Name'), check('city').trim().not().isEmpty().isString().isAlpha().withMessage('Add valid city')], (req, res)=>{
         //app.set('json spaces', 2);
                 const errors = validationResult(req);
 		if(!errors.isEmpty()){
+			return res.status(400).json({errors: errors.array()});
+		}
 		const  company_id  = req.body.id;
                 const  company_name = req.body.name;
                 const  company_city = req.body.city;
-                const errors = validationResult(req);
 		pool.getConnection()
                 .then(conn =>{
                         //perform req (sql)
@@ -208,14 +215,13 @@ app.post('/company', [check('company_name').trim().not().isEmpty().withMessage('
                                 .catch(err =>{
                                         console.log(err);
                                         conn.end();
+					res.status(500).send(res);
                                 });
                 }).catch(err=>{
                         console.log(err);
+			res.status(500).send(res);
                 });
-		}
-		else{
-			res.json("Error");
-		}
+		
 });
 
 
@@ -226,17 +232,17 @@ app.post('/company', [check('company_name').trim().not().isEmpty().withMessage('
  *      description: Update ITEM_NAME
  *      parameters:
  *          - in: path
- *            name: item_name
+ *            name: item_id
  *            schema:
  *              type: string
  *            required: true
- *            description: Item name
+ *            description: Item ID
  *          - in: path
- *            name: item_id
+ *            name: item_name
  *            schema: 
  *              type: string
  *            required: true
- *            description: Item id
+ *            description: Item name
  *          - in: body
  *            name: Foods
  *            description: Food object is created
@@ -254,9 +260,12 @@ app.post('/company', [check('company_name').trim().not().isEmpty().withMessage('
  *          200:
  *              description: ITEM_ID 1 Updated successfully
  */
-app.put('/foods/:item_id/:item_name', jsonParser, (req, res)=>{                                                                                               
-        //app.set('json spaces', 2);                                                                                                                                                                              
-                pool.getConnection()                                                                                             
+app.put('/foods/:item_id/:item_name', jsonParser, [check('item_unit').trim().not().isEmpty().isString().isLength({min:3}).isAlpha().withMessage('Must be valid unit name'), check('company_id').isString().isLength({min:1}).withMessage('Must be valid Company id')], (req, res)=>{                                                                                               
+        //app.set('json spaces', 2);
+		const errors = validationResult(req);                          
+		if(!errors.isEmpty()){                                          
+        		return res.status(400).json({errors: errors.array()}); 
+		}                                                                                                                                                                                                                                              pool.getConnection()                                                                                             
                 .then(conn =>{                                                                                                   
                         //perform req (sql)                                                                                      
                         conn.query("INSERT INTO foods VALUES ('"+[req.params.item_id]+"','"+[req.params.item_name]+"','"+[req.body.item_unit]+"','"+req.body.company_id+"') ON DUPLICATE KEY UPDATE ITEM_NAME = '"+[req.params.item_name]+"'") 
@@ -269,10 +278,12 @@ app.put('/foods/:item_id/:item_name', jsonParser, (req, res)=>{
                                 })                                                                                               
                                 .catch(err =>{                                                                                   
                                         console.log(err);                                                                        
-                                        conn.end();                                                                              
+                                        conn.end();
+					res.status(500).send(res);                                                                              
                                 });                                                                                              
                 }).catch(err=>{                                                                                                  
-                        console.log(err);                                                                                        
+                        console.log(err);
+			res.status(500).send(res);                                                                                        
                 });                                                                                                              
                                                                                                                                  
 }); 
@@ -316,10 +327,12 @@ app.patch('/listofitem/:itemname/:itemcode', (req, res)=>{
                                 })                                                                                    
                                 .catch(err =>{                                                                        
                                         console.log(err);                                                             
-                                        conn.end();                                                                   
+                                        conn.end();
+					res.status(500).send(res);                                                                   
                                 });                                                                                   
                 }).catch(err=>{                                                                                       
-                        console.log(err);                                                                             
+                        console.log(err);
+			res.status(500).send(res);                                                                             
                 });                                                                                                   
                                                                                                                       
 });                                                                                                                   
@@ -356,10 +369,12 @@ app.patch('/listofitem/:itemname/:itemcode', (req, res)=>{
                                 })                                            
                                 .catch(err =>{                                
                                         console.log(err);                     
-                                        conn.end();                           
+                                        conn.end();
+					res.status(500).send(res);                           
                                 });                                           
                 }).catch(err=>{                                               
-                        console.log(err);                                     
+                        console.log(err);
+			res.status(500).send(res);                                     
                 });                                                           
                                                                               
 });                                                                                                                                                            
