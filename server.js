@@ -9,7 +9,7 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const cors = require('cors');
 
-const { check, validationResult } = require('express-validator');
+const { check, validationResult,body } = require('express-validator');
 
 const mariadb = require ('mariadb');
 const pool = mariadb.createPool({
@@ -186,13 +186,14 @@ app.get('/customer/orders/:agent_code', (req, res)=>{
  *          200:
  *              description: Object company created
  */
-app.post('/company', [check('company_name').isLength({min: 3})], jsonParser, (req, res)=>{
+app.post('/company', [check('company_name').trim().not().isEmpty().withMessage('Exceeds length')], jsonParser, async (req, res)=>{
         //app.set('json spaces', 2);
+                const errors = validationResult(req);
+		if(!errors.isEmpty()){
 		const  company_id  = req.body.id;
-		const  company_name = req.body.name;
-		const  company_city = req.body.city;
-                const err = validationResult(req);
-		if(!err.isEmpty()){
+                const  company_name = req.body.name;
+                const  company_city = req.body.city;
+                const errors = validationResult(req);
 		pool.getConnection()
                 .then(conn =>{
                         //perform req (sql)
@@ -220,33 +221,50 @@ app.post('/company', [check('company_name').isLength({min: 3})], jsonParser, (re
 
 /**
  * @swagger
- * /foods/{item_name}:
+ * /foods/{item_id}/{item_name}:
  *    put:
  *      description: Update ITEM_NAME
  *      parameters:
  *          - in: path
  *            name: item_name
  *            schema:
- *              type: integer
+ *              type: string
  *            required: true
- *            description: Item name to be inserted at ITEM_ID = 1 
- *      produces: 
+ *            description: Item name
+ *          - in: path
+ *            name: item_id
+ *            schema: 
+ *              type: string
+ *            required: true
+ *            description: Item id
+ *          - in: body
+ *            name: Foods
+ *            description: Food object is created
+ *            required: true  
+ *            schema:
+ *              type: object
+ *              properties:
+ *                  item_unit:
+ *                      type: string
+ *                  company_id:
+ *                      type: string
+ *      produces:
  *          - application/json
  *      responses:
  *          200:
  *              description: ITEM_ID 1 Updated successfully
  */
-app.put('/foods/:item_name', (req, res)=>{                                                                                               
+app.put('/foods/:item_id/:item_name', jsonParser, (req, res)=>{                                                                                               
         //app.set('json spaces', 2);                                                                                                                                                                              
                 pool.getConnection()                                                                                             
                 .then(conn =>{                                                                                                   
                         //perform req (sql)                                                                                      
-                        conn.query("UPDATE foods SET ITEM_NAME = '"+ [req.params.item_name] + "' WHERE ITEM_ID = '1'") 
+                        conn.query("INSERT INTO foods VALUES ('"+[req.params.item_id]+"','"+[req.params.item_name]+"','"+[req.body.item_unit]+"','"+req.body.company_id+"') ON DUPLICATE KEY UPDATE ITEM_NAME = '"+[req.params.item_name]+"'") 
                                 .then((rows) =>{                                                                                 
                                 //add header                                                                                     
                                 res.set('Content-Type', 'application/json');                                                     
                                 //JSON response                                                                                  
-                                res.json("Updated Food item 1 with ITEM_NAME:"+ [req.params.item_name]);                                                                                  
+                                res.json("Successfully put Food item "+[req.params.item_id]+"with ITEM_NAME:"+ [req.params.item_name]);                                                                                  
                                 conn.end();                                                                                      
                                 })                                                                                               
                                 .catch(err =>{                                                                                   
