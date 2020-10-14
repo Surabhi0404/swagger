@@ -1,6 +1,9 @@
+const axios = require ('axios');
 const express = require ('express');
 const app = express();
 const port = 3001;
+
+const Ajv = require('ajv');
 const bodyParser = require('body-parser');
 
 const jsonParser = bodyParser.json();
@@ -377,7 +380,39 @@ app.patch('/listofitem/:itemname/:itemcode', (req, res)=>{
 			res.status(500).send(res);                                     
                 });                                                           
                                                                               
-});                                                                                                                                                            
+}); 
+
+app.get('/say', (req, res)=>{
+
+	const schema ={
+		type: 'object',
+		properties: {
+			keyword: {type: 'string'}
+		},
+		required: ['keyword']
+		
+	}
+	const ajv = new Ajv();
+	const valid = ajv.validate(schema, req.query);
+	if(!valid)
+		res.status(400).send(ajv.errors);
+	if(typeof req.query.keyword == 'undefined')
+		return res.status(400).send('Query param "keyword" is missing')
+	let keyword = req.query.keyword;
+	if(!keyword.length==0){
+	axios.get('https://rw03crugab.execute-api.us-east-1.amazonaws.com/test/GetStartedLambdaProxyIntegration?keyword='+keyword)
+	.then(response => 
+		res.json(response.data.message))
+	.catch(err => console.log(err));
+	}
+	else
+		res.status(400).send("Please enter valid keyword");
+	
+});
+
+app.get('/temp', (req, res) => {
+	res.json("Hi from temp api");
+});                                                                                                                                                           
                                          
 app.listen(port, ()=>{
 	console.log(`Example app listening to http://localhost:${port}`)
